@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Visual Mood Scanner(AI)</title>
+
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                text-align: center;
+                background-color: #b9d78e;
+
+            }
+            
+            #video {
+                width: 320px;
+                height: 240px;
+            }
+            
+            #capture {
+                margin-top: 10px;
+
+            }
+            
+            #result {
+                margin-top: 10px;
+                font-size: 24px;
+                color: #333;
+            }
+
+        </style>
+    </head>
+    <body>
+        <h1>Visual Mood Scanner(AI)</h1>
+        <video id="video" autoplay></video>
+        <button id="capture">Capture</button>
+        <div id="result"></div>
+    </body>
+    <script>
+        // Get the video element
+        const video = document.getElementById('video'); 
+        const captureButton = document.getElementById('capture');
+        const resultElement = document.getElementById('result');
+        
+        // Get the user's camera
+        navigator.mediaDevices.getUserMedia({ video: true })
+           .then(stream => {
+                video.srcObject = stream;
+                return video.play();
+            })
+           .catch(error => console.error('Error:', error));
+        
+        // Capture the video
+        captureButton.addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Convert the canvas to a Blob
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                formData.append('image', blob, 'capture.png');
+                
+                // Send the image data to the server for analysis
+                fetch('/', {
+                    method: 'POST',
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    resultElement.innerHTML = `
+                        <p>Feeling: ${data.emotion}</p>
+                        <p>Age: ${data.age}</p>
+                        <p>Gender: ${data.gender}</p>
+                        <p>Ethnicity: ${data.ethnicity}</p>
+                    `;
+                })
+                .catch(error => console.error('Error:', error));
+            }, 'image/png');
+            
+            // Clear the result element after a short delay
+            setTimeout(() => {
+                resultElement.textContent = '';
+            }, 3000);
+        });
+    </script>
+</html>
